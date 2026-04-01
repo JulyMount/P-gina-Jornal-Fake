@@ -8,22 +8,27 @@
         .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
         h2 { color: #1a73e8; text-align: center; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #1557b0; }
+        button { width: 100%; padding: 15px; background: #25d366; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; font-weight: bold; }
+        button:hover { background: #128c7e; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         #status { margin-top: 15px; font-size: 14px; text-align: center; color: #555; font-weight: bold; }
+        .instrucao { font-size: 12px; color: #777; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <h2>Formulário Inteligente</h2>
-    <p>Preencha para gerar seu PDF automaticamente.</p>
+    <p>Preencha para receber seu PDF no WhatsApp.</p>
     
     <form id="meuForm">
         <input type="text" name="Nome" id="nomeCampo" placeholder="Seu Nome Completo" required>
         <input type="email" name="Email" id="emailCampo" placeholder="Seu E-mail" required>
-        <button type="submit" id="btnEnviar">Gerar e Abrir meu PDF</button>
+        
+        <p class="instrucao">Digite o Zap (DDD + Número):</p>
+        <input type="number" name="Telefone" id="telCampo" placeholder="Ex: 91988887777" required>
+        
+        <button type="submit" id="btnEnviar">Gerar PDF e Enviar p/ Zap</button>
     </form>
     
     <div id="status"></div>
@@ -42,28 +47,29 @@
         
         const nome = document.getElementById('nomeCampo').value;
         const email = document.getElementById('emailCampo').value;
+        const telefone = document.getElementById('telCampo').value;
 
         btn.disabled = true;
         status.style.color = "#555";
-        status.innerText = "Processando... Isso pode levar 5-10 segundos.";
+        status.innerText = "Processando... Gerando link do WhatsApp...";
 
-        // Criamos a URL com os dados anexados (Query Parameters)
-        const urlComDados = `${URL_SCRIPT}?Nome=${encodeURIComponent(nome)}&Email=${encodeURIComponent(email)}`;
+        // Criamos a URL com Nome, Email e Telefone
+        const urlComDados = `${URL_SCRIPT}?Nome=${encodeURIComponent(nome)}&Email=${encodeURIComponent(email)}&Telefone=${encodeURIComponent(telefone)}`;
         
         fetch(urlComDados)
         .then(res => res.text())
-        .then(linkPdf => {
-            // Se o retorno contiver "http", significa que recebemos o link do Drive
-            if (linkPdf.includes("http")) {
-                status.innerHTML = `<span style="color: green;">Sucesso! Abrindo PDF...</span>`;
+        .then(resposta => {
+            // Se o retorno for o link do WhatsApp (api.whatsapp.com) ou o link do PDF (drive.google.com)
+            if (resposta.includes("http")) {
+                status.innerHTML = `<span style="color: green;">Sucesso! Abrindo WhatsApp...</span>`;
                 
-                // ABRE O PDF EM NOVA ABA
-                window.open(linkPdf, '_blank');
+                // Abre o link retornado pelo Script (que já deve ser a URL do Zap pronta)
+                window.open(resposta, '_blank');
                 
                 form.reset();
             } else {
                 status.style.color = "red";
-                status.innerText = "Erro: O servidor não retornou o link do PDF.";
+                status.innerText = "Erro: O servidor não retornou um link válido.";
             }
         })
         .catch(err => {
