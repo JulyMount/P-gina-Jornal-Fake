@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Inscrição com PDF Automático</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 50px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: #1a73e8; text-align: center; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #1557b0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-size: 14px; text-align: center; color: #555; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Formulário Inteligente</h2>
+    <p>Preencha para gerar seu PDF automaticamente.</p>
+    
+    <form id="meuForm">
+        <input type="text" name="Nome" id="nomeCampo" placeholder="Seu Nome Completo" required>
+        <input type="email" name="Email" id="emailCampo" placeholder="Seu E-mail" required>
+        <button type="submit" id="btnEnviar">Gerar e Abrir meu PDF</button>
+    </form>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    const form = document.getElementById('meuForm');
+    const status = document.getElementById('status');
+    const btn = document.getElementById('btnEnviar');
+
+    // Sua URL do Google Apps Script
+    const URL_SCRIPT = 'https://script.google.com/macros/s/AKfycbwaOlJPsUWFH-nU55d6nWaGrV3TfiJN50xwWZXZnzixT_QAc5UDaNG0R8r262EXT7oEyQ/exec';
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        
+        const nome = document.getElementById('nomeCampo').value;
+        const email = document.getElementById('emailCampo').value;
+
+        btn.disabled = true;
+        status.style.color = "#555";
+        status.innerText = "Processando... Isso pode levar 5-10 segundos.";
+
+        // Criamos a URL com os dados anexados (Query Parameters)
+        const urlComDados = `${URL_SCRIPT}?Nome=${encodeURIComponent(nome)}&Email=${encodeURIComponent(email)}`;
+        
+        fetch(urlComDados)
+        .then(res => res.text())
+        .then(linkPdf => {
+            // Se o retorno contiver "http", significa que recebemos o link do Drive
+            if (linkPdf.includes("http")) {
+                status.innerHTML = `<span style="color: green;">Sucesso! Abrindo PDF...</span>`;
+                
+                // ABRE O PDF EM NOVA ABA
+                window.open(linkPdf, '_blank');
+                
+                form.reset();
+            } else {
+                status.style.color = "red";
+                status.innerText = "Erro: O servidor não retornou o link do PDF.";
+            }
+        })
+        .catch(err => {
+            status.style.color = "red";
+            status.innerText = "Erro ao conectar com o Google.";
+            console.error(err);
+        })
+        .finally(() => btn.disabled = false);
+    });
+</script>
+
+</body>
+</html>
